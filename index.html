@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Filizler Restoran - QR Menü</title>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background: #f8f9fa; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+    h1 { text-align: center; color: #2c3e50; margin-bottom: 5px; font-size: 24px; }
+    .subtitle { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 20px; }
+    .top-bar { background: #eef2f3; padding: 12px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    select { padding: 6px 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 15px; }
+    .btn-garson { background: #e67e22; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+    .kategori-baslik { background: #2c3e50; color: #fff; padding: 8px 12px; border-radius: 6px; margin-top: 20px; font-size: 16px; }
+    .menu-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+    .item-fiyat { font-weight: bold; color: #27ae60; margin-right: 10px; }
+    .btn-ekle { background: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    .btn-ekle:disabled { background: #95a5a6; cursor: not-allowed; }
+    .sepet-kutusu { margin-top: 30px; border-top: 2px dashed #2c3e50; padding-top: 15px; }
+    .toplam-tutar { font-weight: bold; font-size: 18px; text-align: right; margin-top: 10px; color: #c0392b; }
+    .btn-siparis { background: #2980b9; color: white; border: none; width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>FİLİZLER RESTORAN</h1>
+  <div class="subtitle">YEMEK MENÜSÜ</div>
+
+  <div class="top-bar">
+    <div>
+      <label for="masaSelect"><strong>Masa:</strong></label>
+      <select id="masaSelect">
+        <option value="Masa 1">Masa 1</option>
+        <option value="Masa 2">Masa 2</option>
+        <option value="Masa 3">Masa 3</option>
+        <option value="Masa 4">Masa 4</option>
+        <option value="Masa 5">Masa 5</option>
+      </select>
+    </div>
+    <button class="btn-garson" onclick="garsonCagır()">🔔 Garson Çağır</button>
+  </div>
+
+  <div id="menuContainer">Menü yükleniyor...</div>
+
+  <div class="sepet-kutusu">
+    <h3>Sepetiniz</h3>
+    <div id="sepetListesi"><small>Henüz ürün eklemediniz.</small></div>
+    <div class="toplam-tutar" id="toplamTutar">Toplam: 0.00 TL</div>
+    <button class="btn-siparis" onclick="siparisGonder()">Siparişi Kasaya Gönder</button>
+  </div>
+</div>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCQdLGooB_XKQkLn3eYHgl9bfHf_3_YwBc",
+    authDomain: "utopya-capming.firebaseapp.com",
+    databaseURL: "https://utopya-capming-default-rtdb.firebaseio.com",
+    projectId: "utopya-capming",
+    storageBucket: "utopya-capming.firebasestorage.app",
+    messagingSenderId: "74208870746",
+    appId: "1:74208870746:web:7acdc8aefb4dc7b695b363",
+    measurementId: "G-QN4PQRV22X"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlMasa = urlParams.get('masa');
+  if (urlMasa) document.getElementById('masaSelect').value = urlMasa;
+
+  let sepet = [];
+
+  // MENÜYÜ CANLI OLARAK VERİTABANINDAN ÇEKME
+  db.ref('menu').on('value', snap => {
+    const menuData = snap.val() || {};
+    const container = document.getElementById('menuContainer');
+    container.innerHTML = '';
+
+    for (const [kategori, urunler] of Object.entries(menuData)) {
+      const katBaslik = document.createElement('div');
+      katBaslik.className = 'kategori-baslik';
+      katBaslik.innerText = kategori;
+      container.appendChild(katBaslik);
+
+      urunler.forEach(u => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'menu-item';
+        itemDiv.innerHTML = `
+          <span>${u.name}</span>
+          <div>
+            <span class="item-fiyat">${u.price.toFixed(2)} TL</span>
+            <button class="btn-ekle" ${!u.stok ? 'disabled' : ''} onclick="sepeteEkle('${u.name}', ${u.price})">
+              ${u.stok ? 'Ekle' : 'Tükendi'}
+            </button>
+          </div>
+        `;
+        container.appendChild(itemDiv);
+      });
+    }
+  });
+
+  function sepeteEkle(urun, fiyat) {
+    sepet.push({ urun, fiyat });
+    sepetiGuncelle();
+  }
+
+  function sepetiGuncelle() {
+    const sepetDiv = document.getElementById('sepetListesi');
+    const toplamDiv = document.getElementById('toplamTutar');
+
+    if (sepet.length === 0) {
+      sepetDiv.innerHTML = '<small>Henüz ürün eklemediniz.</small>';
+      toplamDiv.innerText = 'Toplam: 0.00 TL';
+      return;
+    }
+
+    let toplam = 0;
+    sepetDiv.innerHTML = sepet.map((item) => {
+      toplam += item.fiyat;
+      return `<div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>• ${item.urun}</span> <span>${item.fiyat.toFixed(2)} TL</span></div>`;
+    }).join('');
+
+    toplamDiv.innerText = `Toplam: ${toplam.toFixed(2)} TL`;
+  }
+
+  function siparisGonder() {
+    if (sepet.length === 0) return alert('Lütfen önce sepete ürün ekleyin!');
+
+    const secilenMasa = document.getElementById('masaSelect').value;
+    const saat = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+    db.ref('siparisler').push({
+      masa: secilenMasa,
+      urunler: sepet,
+      saat: saat,
+      tarih: Date.now()
+    }).then(() => {
+      alert(`${secilenMasa} siparişiniz kasaya ve mutfağa iletildi!`);
+      sepet = [];
+      sepetiGuncelle();
+    });
+  }
+
+  function garsonCagır() {
+    const secilenMasa = document.getElementById('masaSelect').value;
+    const saat = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+    db.ref('siparisler').push({
+      masa: secilenMasa,
+      urunler: [{ urun: "🔔 GARSON ÇAĞRISI", fiyat: 0 }],
+      saat: saat,
+      tarih: Date.now()
+    }).then(() => {
+      alert(`${secilenMasa} için garson çağrısı gönderildi.`);
+    });
+  }
+</script>
+
+</body>
+</html>
