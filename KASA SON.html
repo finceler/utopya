@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ütopya Camping - Kasa & Yönetim Paneli</title>
+  
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #1e272e; color: #fff; }
+    .nav-bar { background: #0f1418; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #33d9b2; }
+    .nav-title { font-size: 20px; font-weight: bold; color: #fbc531; }
+    .nav-tabs { display: flex; gap: 10px; }
+    .tab-btn { background: #2f3640; color: #fff; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+    .tab-btn.active { background: #33d9b2; color: #1e272e; }
+
+    .content-section { padding: 20px; display: none; }
+    .content-section.active { display: block; }
+
+    .masalar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+    .masa-kart { background: #2f3640; border-radius: 10px; border-top: 6px solid #718093; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; min-height: 280px; }
+    .masa-kart.hazirlaniyor { border-top-color: #e84118; animation: pulseRed 2s infinite; }
+    .masa-kart.hazir { border-top-color: #2ecc71; animation: pulseGreen 2s infinite; }
+
+    @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(232, 65, 24, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(232, 65, 24, 0); } 100% { box-shadow: 0 0 0 0 rgba(232, 65, 24, 0); } }
+    @keyframes pulseGreen { 0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); } 100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); } }
+
+    .pin-badge { background: #f1c40f; color: #1e272e; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 13px; }
+    .durum-hazirlaniyor { background: #e84118; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 12px; font-weight: bold; }
+    .durum-hazir { background: #2ecc71; color: #000; font-size: 11px; padding: 3px 8px; border-radius: 12px; font-weight: bold; }
+
+    .siparis-item { padding: 6px 0; border-bottom: 1px dashed #485460; font-size: 13px; }
+    .garson-select { width: 100%; padding: 8px; border-radius: 6px; background: #1e272e; color: #fbc531; border: 1px solid #485460; font-weight: bold; margin-bottom: 8px; }
+
+    .admin-card { background: #2f3640; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+    .form-group { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+    input, select { padding: 10px; border-radius: 6px; border: 1px solid #485460; background: #1e272e; color: #fff; font-size: 14px; }
+
+    .kroki-container { background: #353b48; padding: 15px; border-radius: 12px; margin-top: 15px; }
+    .bolum-baslik { font-size: 13px; font-weight: bold; color: #fbc531; letter-spacing: 1px; margin-bottom: 10px; text-transform: uppercase; }
+    .cadir-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px; }
+    .cadir-box { background: #2f3640; border: 2px solid #2ecc71; padding: 12px 5px; border-radius: 8px; text-align: center; cursor: pointer; position: relative; user-select: none; }
+    .cadir-box.dolu { opacity: 0.4; cursor: not-allowed; background: #4b6584; border-color: #e74c3c; }
+    .cadir-box.secili { border: 3px solid #f1c40f !important; background-color: #1e272e !important; box-shadow: 0 0 10px rgba(241, 196, 15, 0.8); }
+
+    .table-custom { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    .table-custom th, .table-custom td { padding: 10px; border-bottom: 1px solid #485460; text-align: left; }
+    .table-custom th { background: #0f1418; color: #fbc531; }
+    .btn-action { padding: 6px 12px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; color: #fff; }
+  </style>
+</head>
+<body>
+
+  <div class="nav-bar">
+    <div class="nav-title">ÜTOPYA CAMPING - POS & YÖNETİM</div>
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="sekmeDegistir('masalarTab', this)">🖥 Masalar</button>
+      <button class="tab-btn" onclick="sekmeDegistir('garsonYonetimTab', this)">👨‍🍳 Garson Yönetimi</button>
+      <button class="tab-btn" onclick="sekmeDegistir('kampTab', this)">⛺ Kamp & Rezervasyon</button>
+      <button class="tab-btn" onclick="sekmeDegistir('menuTab', this)">⚙ Menü & Stok</button>
+    </div>
+  </div>
+
+  <!-- 1. MASALAR -->
+  <div id="masalarTab" class="content-section active">
+    <div class="masalar-grid" id="masalarGrid"></div>
+  </div>
+
+  <!-- 2. GARSON YÖNETİM PANELİ -->
+  <div id="garsonYonetimTab" class="content-section">
+    <div class="admin-card">
+      <h3>➕ Yeni Garson Tanımla</h3>
+      <div class="form-group">
+        <input type="text" id="yeniGarsonAd" placeholder="Garson Adı Soyadı" style="flex:2;">
+        <button style="background:#33d9b2; color:#1e272e; border:none; padding:10px 20px; font-weight:bold; cursor:pointer; border-radius:6px;" onclick="garsonEkle()">Garsonu Kaydet</button>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h3>📋 Tanımlı Garsonlar ve Aktif Görev Durumu</h3>
+      <table class="table-custom">
+        <thead>
+          <tr>
+            <th>Garson Adı</th>
+            <th>Aktif Bekleyen Görevler</th>
+            <th>Tamamlanan Teslimatlar</th>
+            <th>İşlem</th>
+          </tr>
+        </thead>
+        <tbody id="garsonListesiBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 3. KAMP VE REZERVASYON YÖNETİMİ -->
+  <div id="kampTab" class="content-section">
+    <div class="admin-card">
+      <h3>📞 Manuel / Telefonla Rezervasyon Oluştur</h3>
+      <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:15px; background:#1e272e; padding:12px; border-radius:8px;">
+        <div>
+          <label><strong>Giriş Tarihi:</strong></label><br>
+          <input type="date" id="kasaGirisTarihi" onchange="kasaMusaitlikHesapla()">
+        </div>
+        <div>
+          <label><strong>Çıkış Tarihi:</strong></label><br>
+          <input type="date" id="kasaCikisTarihi" onchange="kasaMusaitlikHesapla()">
+        </div>
+      </div>
+
+      <div class="kroki-container">
+        <div class="bolum-baslik">Hazır Çadır Bölgesi</div>
+        <div class="cadir-grid" id="kasaHazirGrid"></div>
+
+        <div class="bolum-baslik">Serbest Çadır Bölgesi</div>
+        <div class="cadir-grid" id="kasaSerbestGrid"></div>
+      </div>
+
+      <div style="margin-top:15px; background:#1e272e; padding:15px; border-radius:8px;">
+        <div style="margin-bottom:10px;"><strong>Seçilen Alan:</strong> <span id="kasaSecilenAlanText" style="color:#f1c40f; font-weight:bold; font-size:16px;">Henüz Seçilmedi</span></div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+          <input type="text" id="kasaResIsim" placeholder="Müşteri Ad Soyad" style="flex:1;">
+          <input type="text" id="kasaResTelefon" placeholder="Telefon Numarası" style="flex:1;">
+        </div>
+        <button class="btn-action" style="background:#27ae60; width:100%; padding:12px; font-size:15px;" onclick="kasaManuelRezervasyonEkle()">✓ Manuel Rezervasyonu Kaydet ve Onayla</button>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h3>📥 İnternetten Gelen Rezervasyon Talepleri</h3>
+      <table class="table-custom">
+        <thead>
+          <tr>
+            <th>Saat</th>
+            <th>Çadır / Parsel</th>
+            <th>Müşteri</th>
+            <th>Telefon</th>
+            <th>Tarihler</th>
+            <th>İşlem</th>
+          </tr>
+        </thead>
+        <tbody id="rezervasyonTalepleriBody"></tbody>
+      </table>
+    </div>
+
+    <div class="admin-card">
+      <h3>📋 Onaylanan Aktif Rezervasyonlar</h3>
+      <table class="table-custom">
+        <thead>
+          <tr>
+            <th>Çadır / Parsel</th>
+            <th>Müşteri</th>
+            <th>Telefon</th>
+            <th>Giriş - Çıkış Tarihi</th>
+            <th>İşlem</th>
+          </tr>
+        </thead>
+        <tbody id="onayliRezervasyonlarBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4. MENÜ VE STOK YÖNETİMİ -->
+  <div id="menuTab" class="content-section">
+    <div class="admin-card">
+      <h3>Yeni Ürün Ekle / Güncelle</h3>
+      <div class="form-group">
+        <select id="yeniKategori">
+          <option value="BAŞLANGIÇ">BAŞLANGIÇ</option>
+          <option value="ARA SICAK">ARA SICAK</option>
+          <option value="ANA YEMEK">ANA YEMEK</option>
+          <option value="İÇECEKLER">İÇECEKLER</option>
+        </select>
+        <input type="text" id="yeniUrunAdi" placeholder="Ürün Adı" style="flex:2;">
+        <input type="number" id="yeniUrunFiyat" placeholder="Fiyat (TL)" step="0.5" style="flex:1;">
+        <button style="background:#33d9b2; color:#1e272e; border:none; padding:10px 20px; font-weight:bold; cursor:pointer; border-radius:6px;" onclick="urunKaydet()">Kaydet</button>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h3>Mevcut Menü & Stok Durumu</h3>
+      <table class="table-custom">
+        <thead>
+          <tr><th>Kategori</th><th>Ürün Adı</th><th>Fiyat</th><th>Stok Durumu</th><th>İşlem</th></tr>
+        </thead>
+        <tbody id="menuListesiBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCQdLGooB_XKQkLn3eYHgl9bfHf_3_YwBc",
+    authDomain: "utopya-capming.firebaseapp.com",
+    databaseURL: "https://utopya-capming-default-rtdb.firebaseio.com",
+    projectId: "utopya-capming",
+    storageBucket: "utopya-capming.firebasestorage.app",
+    messagingSenderId: "74208870746",
+    appId: "1:74208870746:web:7acdc8aefb4dc7b695b363",
+    measurementId: "G-QN4PQRV22X"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const masalar = ["Masa 1", "Masa 2", "Masa 3", "Masa 4", "Masa 5"];
+  let masaDurumlari = { 
+    "Masa 1": { urunler: [], durum: "BOS", atananGarson: "" }, 
+    "Masa 2": { urunler: [], durum: "BOS", atananGarson: "" }, 
+    "Masa 3": { urunler: [], durum: "BOS", atananGarson: "" }, 
+    "Masa 4": { urunler: [], durum: "BOS", atananGarson: "" }, 
+    "Masa 5": { urunler: [], durum: "BOS", atananGarson: "" } 
+  };
+
+  let garsonListesi = [];
+
+  function pinUretTekMasa(masaNo) {
+    const yeniPin = Math.floor(1000 + Math.random() * 9000).toString();
+    db.ref(`masaPinler/${masaNo}`).set(yeniPin);
+  }
+
+  db.ref('masaPinler').once('value', snap => {
+    const pinler = snap.val() || {};
+    masalar.forEach(m => {
+      if (!pinler[m]) pinUretTekMasa(m);
+    });
+  });
+
+  let canlıPinler = {};
+  db.ref('masaPinler').on('value', snap => { canlıPinler = snap.val() || {}; ekranGuncelle(); });
+
+  // GARSONLARI DİNLEME (Geliştirilmiş)
+  db.ref('garsonlar').on('value', snap => {
+    const data = snap.val() || {};
+    garsonListesi = [];
+    Object.entries(data).forEach(([key, val]) => {
+      if (typeof val === 'object' && val.ad) {
+        garsonListesi.push({ key, ad: val.ad });
+      } else if (typeof val === 'string') {
+        garsonListesi.push({ key, ad: val });
+      }
+    });
+    garsonTablosuGuncelle();
+    ekranGuncelle();
+  });
+
+  // CANLI SİPARİŞ DİNLEYİCİSİ
+  db.ref('siparisler').on('child_added', snapshot => {
+    const data = snapshot.val();
+    if (data && masaDurumlari[data.masa]) {
+      const yeniUrunler = (data.urunler || []).map(u => ({ ...u, saat: data.saat, durum: "YENI" }));
+      masaDurumlari[data.masa].urunler.push(...yeniUrunler);
+      if(masaDurumlari[data.masa].durum !== "MUTFAKTA_HAZIR") {
+        masaDurumlari[data.masa].durum = "HAZIRLANIYOR";
+      }
+      sesliUyari(587.33);
+      ekranGuncelle();
+    }
+  });
+
+  // MUTFAK BİLDİRİMLERİNİ DİNLEME
+  db.ref('mutfakBildirimleri').on('child_added', snapshot => {
+    const bildirim = snapshot.val();
+    if (bildirim && bildirim.masa && masaDurumlari[bildirim.masa]) {
+      masaDurumlari[bildirim.masa].durum = "MUTFAKTA_HAZIR";
+      sesliUyari(880);
+      ekranGuncelle();
+    }
+  });
+
+  function garsonEkle() {
+    const ad = document.getElementById('yeniGarsonAd').value.trim();
+    if (!ad) return alert('Lütfen garson adı giriniz!');
+    
+    db.ref('garsonlar').push({ ad: ad }).then(() => {
+      alert(`✅ ${ad} isimli garson başarıyla eklendi.`);
+      document.getElementById('yeniGarsonAd').value = '';
+    });
+  }
+
+  function garsonSil(key) {
+    if (confirm('Garsonu silmek istediğinize emin misiniz?')) {
+      db.ref(`garsonlar/${key}`).remove();
+    }
+  }
+
+  function garsonAtadegisti(masaNo, garsonAd) {
+    masaDurumlari[masaNo].atananGarson = garsonAd;
+  }
+
+  function garsonTablosuGuncelle() {
+    db.ref('garsonGorevleri').once('value', snap => {
+      const tumGorevler = Object.values(snap.val() || {});
+      const tbody = document.getElementById('garsonListesiBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      if (garsonListesi.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa;">Henüz tanımlı garson yok.</td></tr>';
+        return;
+      }
+
+      garsonListesi.forEach(g => {
+        const bekleyen = tumGorevler.filter(x => x.durum === "BEKLİYOR" && (x.atananGarson === g.ad || x.teslimEdenGarson === g.ad)).length;
+        const tamamlanan = tumGorevler.filter(x => x.durum === "TESLİM EDİLDİ" && x.teslimEdenGarson === g.ad).length;
+
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>${g.ad}</strong></td>
+            <td><span style="color:#e84118; font-weight:bold;">${bekleyen} Aktif Görev</span></td>
+            <td><span style="color:#2ecc71; font-weight:bold;">${tamamlanan} Teslimat</span></td>
+            <td><button class="btn-action" style="background:#e74c3c;" onclick="garsonSil('${g.key}')">Sil</button></td>
+          </tr>`;
+      });
+    });
+  }
+
+  function siparisTeslimEt(masaNo) {
+    if (masaDurumlari[masaNo]) {
+      masaDurumlari[masaNo].urunler.forEach(u => u.durum = "TESLIM");
+      masaDurumlari[masaNo].durum = "TESLIM_EDILDI";
+      ekranGuncelle();
+    }
+  }
+
+  // KASA KAMP VE REZERVASYON YÖNETİMİ
+  const bugun = new Date().toISOString().split('T')[0];
+  const yarinObj = new Date(); yarinObj.setDate(yarinObj.getDate() + 1);
+  const yarin = yarinObj.toISOString().split('T')[0];
+
+  document.getElementById('kasaGirisTarihi').value = bugun;
+  document.getElementById('kasaCikisTarihi').value = yarin;
+
+  let onayliRezervasyonlar = [];
+  let kasaSeciliCadir = null;
+  let kasaDoluCadirlar = [];
+
+  db.ref('onayliRezervasyonlar').on('value', snap => {
+    onayliRezervasyonlar = Object.values(snap.val() || {});
+    kasaMusaitlikHesapla();
+    onayliTabloCiz(snap.val() || {});
+  });
+
+  function kasaMusaitlikHesapla() {
+    const giris = document.getElementById('kasaGirisTarihi').value;
+    const cikis = document.getElementById('kasaCikisTarihi').value;
+
+    if (!giris || !cikis || giris >= cikis) return;
+    kasaDoluCadirlar = [];
+
+    onayliRezervasyonlar.forEach(r => {
+      if ((giris < r.cikisTarihi) && (cikis > r.girisTarihi)) {
+        kasaDoluCadirlar.push(r.alan);
+      }
+    });
+    kasaKrokiCiz();
+  }
+
+  function kasaKrokiCiz() {
+    const hazirGrid = document.getElementById('kasaHazirGrid');
+    const serbestGrid = document.getElementById('kasaSerbestGrid');
+    hazirGrid.innerHTML = ''; serbestGrid.innerHTML = '';
+
+    const hazirList = ["Çadır 1", "Çadır 2", "Çadır 3", "Çadır 4", "Çadır 5"];
+    const serbestList = ["Parsel A", "Parsel B", "Parsel C", "Parsel D", "Parsel E"];
+
+    hazirList.forEach(c => {
+      const isDolu = kasaDoluCadirlar.includes(c);
+      const isSecili = kasaSeciliCadir === c;
+      const div = document.createElement('div');
+      div.className = `cadir-box ${isDolu ? 'dolu' : ''} ${isSecili ? 'secili' : ''}`;
+      div.innerHTML = `⛺<br><strong>${c}</strong><br><small>${isDolu ? '🔴 Dolu' : '🟢 Boş'}</small>`;
+      if (!isDolu) div.onclick = function() { kasaCadirSec(c); };
+      hazirGrid.appendChild(div);
+    });
+
+    serbestList.forEach(p => {
+      const isDolu = kasaDoluCadirlar.includes(p);
+      const isSecili = kasaSeciliCadir === p;
+      const div = document.createElement('div');
+      div.className = `cadir-box ${isDolu ? 'dolu' : ''} ${isSecili ? 'secili' : ''}`;
+      div.innerHTML = `⛺<br><strong>${p}</strong><br><small>${isDolu ? '🔴 Dolu' : '🟢 Boş'}</small>`;
+      if (!isDolu) div.onclick = function() { kasaCadirSec(p); };
+      serbestGrid.appendChild(div);
+    });
+  }
+
+  function kasaCadirSec(id) {
+    kasaSeciliCadir = id;
+    document.getElementById('kasaSecilenAlanText').innerText = id;
+    kasaKrokiCiz();
+  }
+
+  function kasaManuelRezervasyonEkle() {
+    const isim = document.getElementById('kasaResIsim').value.trim();
+    const tel = document.getElementById('kasaResTelefon').value.trim();
+    const girisTarihi = document.getElementById('kasaGirisTarihi').value;
+    const cikisTarihi = document.getElementById('kasaCikisTarihi').value;
+
+    if (!kasaSeciliCadir) return alert('Lütfen bir çadır/parsel seçin!');
+    if (!isim || !tel) return alert('Bilgileri doldurun!');
+
+    db.ref('onayliRezervasyonlar').push({
+      alan: kasaSeciliCadir, isim, tel, girisTarihi, cikisTarihi,
+      saat: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+    }).then(() => {
+      alert(`${kasaSeciliCadir} kaydedildi!`);
+      kasaSeciliCadir = null;
+      document.getElementById('kasaSecilenAlanText').innerText = 'Henüz Seçilmedi';
+      document.getElementById('kasaResIsim').value = '';
+      document.getElementById('kasaResTelefon').value = '';
+      kasaMusaitlikHesapla();
+    });
+  }
+
+  db.ref('rezervasyonTalepleri').on('value', snap => {
+    const data = snap.val() || {};
+    const tbody = document.getElementById('rezervasyonTalepleriBody');
+    tbody.innerHTML = '';
+    Object.entries(data).forEach(([key, r]) => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${r.saat}</td>
+          <td><strong>${r.alan}</strong></td>
+          <td>${r.isim}</td>
+          <td>${r.tel}</td>
+          <td>${r.girisTarihi} ➔${r.cikisTarihi}</td>
+          <td>
+            <button class="btn-action" style="background:#27ae60;" onclick="rezervasyonOnayla('${key}')">✓ Onayla</button>
+            <button class="btn-action" style="background:#e74c3c;" onclick="rezervasyonReddet('${key}')">X İptal</button>
+          </td>
+        </tr>`;
+    });
+  });
+
+  function onayliTabloCiz(data) {
+    const tbody = document.getElementById('onayliRezervasyonlarBody');
+    tbody.innerHTML = '';
+    Object.entries(data).forEach(([key, r]) => {
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>${r.alan}</strong></td>
+          <td>${r.isim}</td>
+          <td>${r.tel}</td>
+          <td>${r.girisTarihi} ➔${r.cikisTarihi}</td>
+          <td><button class="btn-action" style="background:#e74c3c;" onclick="onayliSil('${key}')">Sil</button></td>
+        </tr>`;
+    });
+  }
+
+  function rezervasyonOnayla(key) {
+    db.ref(`rezervasyonTalepleri/${key}`).once('value', snap => {
+      const data = snap.val();
+      db.ref('onayliRezervasyonlar').push(data).then(() => {
+        db.ref(`rezervasyonTalepleri/${key}`).remove();
+      });
+    });
+  }
+
+  function rezervasyonReddet(key) { if (confirm('İptal edilsin mi?')) db.ref(`rezervasyonTalepleri/${key}`).remove(); }
+  function onayliSil(key) { if (confirm('Silinsin mi?')) db.ref(`onayliRezervasyonlar/${key}`).remove(); }
+
+  // MENÜ & STOK
+  db.ref('menu').on('value', snap => {
+    const menuData = snap.val() || {};
+    const tbody = document.getElementById('menuListesiBody');
+    tbody.innerHTML = '';
+    for (const [kat, urunler] of Object.entries(menuData)) {
+      urunler.forEach((u, index) => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${kat}</td>
+            <td><strong>${u.name}</strong></td>
+            <td>${u.price.toFixed(2)} TL</td>
+            <td>
+              <button style="background:${u.stok ? '#27ae60':'#c0392b'}; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;"
+                onclick="stokDegistir('${kat}', ${index},${!u.stok})">
+                ${u.stok ? 'Stokta Var' : 'Tükendi'}
+              </button>
+            </td>
+            <td><button class="btn-action" style="background:#e74c3c;" onclick="urunSil('${kat}',${index})">Sil</button></td>
+          </tr>`;
+      });
+    }
+  });
+
+  function urunKaydet() {
+    const kat = document.getElementById('yeniKategori').value;
+    const ad = document.getElementById('yeniUrunAdi').value.trim();
+    const fiyat = parseFloat(document.getElementById('yeniUrunFiyat').value);
+    if (!ad || isNaN(fiyat)) return alert('Bilgileri kontrol edin!');
+
+    db.ref(`menu/${kat}`).once('value', snap => {
+      let urunler = snap.val() || [];
+      urunler.push({ name: ad, price: fiyat, stok: true });
+      db.ref(`menu/${kat}`).set(urunler).then(() => {
+        document.getElementById('yeniUrunAdi').value = '';
+        document.getElementById('yeniUrunFiyat').value = '';
+      });
+    });
+  }
+
+  function stokDegistir(kat, index, durum) { db.ref(`menu/${kat}/${index}/stok`).set(durum); }
+  function urunSil(kat, index) { if (confirm('Silinsin mi?')) db.ref(`menu/${kat}/${index}`).remove(); }
+
+  function ekranGuncelle() {
+    const grid = document.getElementById('masalarGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    masalar.forEach(m => {
+      const masa = masaDurumlari[m];
+      let toplam = 0;
+
+      let siparisHTML = '';
+      if (masa.urunler.length > 0) {
+        siparisHTML = masa.urunler.map(s => {
+          toplam += s.fiyat;
+          return `
+            <div class="siparis-item">
+              <span>[${s.saat}] <strong>${s.urun}</strong> (${s.fiyat} TL)</span>${s.not ? `<br><small style="color:#f39c12;">Not: ${s.not}</small>` : ''}
+            </div>`;
+        }).join('');
+      } else {
+        siparisHTML = '<div style="color:#7f8c8d; text-align:center; padding-top:30px;">Masa Boş</div>';
+      }
+
+      const isHazir = masa.durum === "MUTFAKTA_HAZIR";
+      const isHazirlaniyor = masa.durum === "HAZIRLANIYOR";
+
+      let kartClass = 'masa-kart';
+      if (isHazir) kartClass += ' hazir';
+      else if (isHazirlaniyor) kartClass += ' hazirlaniyor';
+
+      let garsonOptions = '<option value="">-- Garson Ata --</option>';
+      garsonListesi.forEach(g => {
+        const selected = masa.atananGarson === g.ad ? 'selected' : '';
+        garsonOptions += `<option value="${g.ad}" ${selected}>${g.ad}</option>`;
+      });
+
+      const div = document.createElement('div');
+      div.className = kartClass;
+      div.innerHTML = `
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #485460; padding-bottom:8px;">
+            <strong>${m}</strong>${isHazirlaniyor ? '<span class="durum-hazirlaniyor">⏳ Mutfakta Hazırlanıyor</span>' : ''}
+            ${isHazir ? '<span class="durum-hazir">✅ Mutfakta Hazır!</span>' : ''}
+            <span class="pin-badge">PIN: ${canlıPinler[m] || '----'}</span>
+          </div>
+          <div style="margin:10px 0;">${siparisHTML}</div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; font-weight:bold; color:#fbc531; margin-bottom:10px; font-size:16px;">
+            <span>Toplam:</span><span>${toplam.toFixed(2)} TL</span>
+          </div>
+          ${masa.urunler.length > 0 ? `
+            <select class="garson-select" onchange="garsonAtadegisti('${m}', this.value)">
+              ${garsonOptions}
+            </select>
+            <div style="display:flex; gap:8px;">
+              <button style="flex:1; padding:8px; background:#00a8ff; border:none; border-radius:6px; color:#fff; font-weight:bold; cursor:pointer;" onclick="siparisTeslimEt('${m}')">📦 Siparişi Teslim Et</button>
+              <button style="flex:1; padding:8px; background:#4cd137; border:none; border-radius:6px; color:#fff; font-weight:bold; cursor:pointer;" onclick="hesapKapat('${m}')">💳 Hesabı Kapat / Sıfırla</button>
+            </div>
+          ` : ''}
+        </div>`;
+      grid.appendChild(div);
+    });
+  }
+
+  function hesapKapat(masaNo) {
+    if (confirm(`${masaNo} hesabını kapatmak istiyor musunuz?`)) {
+      db.ref('siparisler').once('value', snap => {
+        const data = snap.val();
+        if (data) Object.keys(data).forEach(k => { if (data[k].masa === masaNo) db.ref(`siparisler/${k}`).remove(); });
+      });
+
+      db.ref('mutfakBildirimleri').once('value', snap => {
+        const data = snap.val();
+        if (data) Object.keys(data).forEach(k => { if (data[k].masa === masaNo) db.ref(`mutfakBildirimleri/${k}`).remove(); });
+      });
+
+      pinUretTekMasa(masaNo);
+      masaDurumlari[masaNo] = { urunler: [], durum: "BOS", atananGarson: "" };
+      ekranGuncelle();
+    }
+  }
+
+  function sekmeDegistir(tabId, btn) {
+    document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function sesliUyari(freq) {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+    } catch(e){}
+  }
+
+  kasaMusaitlikHesapla();
+  ekranGuncelle();
+</script>
+</body>
+</html>

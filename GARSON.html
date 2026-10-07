@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ütopya Camping - Garson & Harita Paneli</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+*{box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;margin:0;padding:15px;background:#121212;color:#fff}.header{text-align:center;background:#1e1e1e;padding:15px;border-radius:10px;margin-bottom:15px;border-bottom:3px solid #3498db}.header h2{margin:0;color:#f39c12}.action-bar{display:flex;justify-content:center;align-items:center;gap:10px;margin-bottom:15px;flex-wrap:wrap}select{padding:12px;font-size:16px;border-radius:8px;background:#2c2c2c;color:#fff;border:1px solid #444;width:100%;max-width:320px;font-weight:bold;outline:none;cursor:pointer}.btn{border:0;padding:11px 16px;border-radius:8px;font-weight:bold;cursor:pointer}.btn-quick{background:#f39c12;color:#000}.btn-quick:hover{background:#e67e22;color:#fff}.map-container{background:#1e1e1e;border-radius:10px;padding:15px;margin-bottom:20px;border:1px solid #333}.map-title{text-align:center;font-size:16px;font-weight:bold;color:#f39c12;margin-bottom:10px;text-transform:uppercase}.map-grid{display:grid;grid-template-columns:2fr 1fr;gap:15px}.camping-area{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:10px}.restaurant-area{display:flex;flex-direction:column;gap:8px}.map-card{background:#2a2a2a;border:2px solid #444;border-radius:8px;padding:10px;text-align:center;user-select:none}.map-card .icon{font-size:20px;display:block}.map-card .name{font-size:13px;font-weight:bold;display:block;margin-top:4px}.map-card .pin{font-size:12px;color:#f1c40f;margin-top:4px;font-weight:bold}.map-card.siparis-var{border-color:#e74c3c;box-shadow:0 0 12px rgba(231,76,60,.55);animation:pulse .9s infinite alternate}@keyframes pulse{from{opacity:.75}to{opacity:1}}.gorev-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:15px}.gorev-kart{background:#1e1e1e;border-radius:10px;padding:15px;border-left:6px solid #3498db;box-shadow:0 4px 10px rgba(0,0,0,.5)}.gorev-kart.yeni{border-left-color:#e74c3c}.gorev-header{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:18px;font-weight:bold;border-bottom:1px solid #333;padding-bottom:8px;margin-bottom:10px;flex-wrap:wrap}.masa-pin{font-size:12px;background:#f1c40f;color:#111;padding:4px 8px;border-radius:5px}.siparis-grubu{background:#252525;border-radius:8px;padding:10px;margin:10px 0;border:1px solid #333}.siparis-grubu.teslimli{border-left:4px solid #2ecc71}.siparis-grubu.bekliyor{border-left:4px solid #e74c3c}.siparis-baslik{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px}.siparis-satir{padding:7px 4px;border-bottom:1px dashed #444;font-size:14px}.siparis-satir:last-child{border-bottom:0}.meta{font-size:12px;color:#aaa;margin-top:7px}.teslim-bilgi{background:#183d28;border-radius:6px;padding:8px;margin-top:8px;font-size:12px;color:#b8f5c9}.durum{font-size:11px;padding:4px 8px;border-radius:12px;font-weight:bold}.durum-bekliyor{background:#e74c3c;color:#fff}.durum-teslim{background:#2ecc71;color:#07150b}.btn-teslim{background:#2ecc71;color:#fff;border:none;width:100%;padding:10px;font-size:14px;font-weight:bold;border-radius:6px;cursor:pointer;margin-top:10px}.btn-teslim:hover{background:#27ae60}.bos-mesaj{text-align:center;color:#aaa;margin-top:20px;font-size:16px;grid-column:1/-1;background:#1e1e1e;padding:20px;border-radius:10px;border:1px dashed #444}.modal{display:none;position:fixed;z-index:100;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.85);overflow-y:auto}.modal-content{background:#1e1e1e;margin:3% auto;padding:20px;border-radius:12px;width:90%;max-width:650px;border:1px solid #444}.close-btn{color:#aaa;float:right;font-size:28px;font-weight:bold;cursor:pointer}.menu-kat{color:#f39c12;font-weight:bold;border-bottom:1px solid #444;padding-bottom:5px;margin-top:12px}.menu-urun{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#282828;padding:9px;border-radius:6px;margin-top:6px}.menu-urun button{background:#3498db;color:#fff;border:0;border-radius:5px;padding:6px 10px;cursor:pointer}.sepet-kutusu{margin-top:20px;border-top:2px dashed #f39c12;padding-top:15px}.sepet-item{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #444}
+@media(max-width:768px){.map-grid{grid-template-columns:1fr}.gorev-grid{grid-template-columns:1fr}.gorev-header{font-size:16px}}
+</style>
+</head>
+<body>
+<div class="header"><h2>🏃 GARSON SİPARİŞ & TESLİMAT PANELİ</h2></div>
+<div class="action-bar">
+<select id="garsonSelect" onchange="garsonDegisti()"><option value="">-- Lütfen Kendinizi Seçin --</option></select>
+<button class="btn btn-quick" onclick="menuModalAc()">📖 MENÜDEN HIZLI SİPARİŞ AL</button>
+</div>
+
+<div class="map-container">
+<div class="map-title">📍 Canlı Masa & Kamp Alanı Haritası</div>
+<div class="map-grid">
+<div><span style="font-size:12px;color:#aaa;display:block;margin-bottom:5px">⛺ KAMP ALANI (ÇADIRLAR & PARSELLER)</span><div class="camping-area" id="campMap"></div></div>
+<div><span style="font-size:12px;color:#aaa;display:block;margin-bottom:5px">🍽️ RESTORAN (MASALAR)</span><div class="restaurant-area" id="restMap"></div></div>
+</div></div>
+
+<div id="gorevListesi" class="gorev-grid"></div>
+
+<div id="menuModal" class="modal"><div class="modal-content">
+<span class="close-btn" onclick="menuModalKapat()">&times;</span>
+<h3 style="color:#f39c12;margin-top:0">📝 Manuel Sipariş Girişi</h3>
+<div style="margin-bottom:15px"><label style="font-size:13px;color:#aaa">Masa / Çadır Seçin:</label><select id="modalMasaSelect" style="width:100%;margin-top:4px">
+<option value="Masa 1">Masa 1</option><option value="Masa 2">Masa 2</option><option value="Masa 3">Masa 3</option><option value="Masa 4">Masa 4</option><option value="Masa 5">Masa 5</option><option value="Çadır 1">Çadır 1</option><option value="Çadır 2">Çadır 2</option><option value="Çadır 3">Çadır 3</option><option value="Çadır 4">Çadır 4</option><option value="Çadır 5">Çadır 5</option></select></div>
+<div id="menuListesiModal">Menü yükleniyor...</div>
+<div class="sepet-kutusu"><h4>🛒 Eklenen Ürünler</h4><div id="modalSepetListesi"><small style="color:#aaa">Henüz ürün eklenmedi.</small></div><div style="font-weight:bold;font-size:18px;text-align:right;margin-top:10px;color:#2ecc71" id="modalToplamTutar">Toplam: 0.00 TL</div><button class="btn-teslim" onclick="manuelSiparisGonder()">🚀 Siparişi Gönder</button></div>
+</div></div>
+
+<script>
+const firebaseConfig={apiKey:"AIzaSyCQdLGooB_XKQkLn3eYHgl9bfHf_3_YwBc",authDomain:"utopya-capming.firebaseapp.com",databaseURL:"https://utopya-capming-default-rtdb.firebaseio.com",projectId:"utopya-capming",storageBucket:"utopya-capming.firebasestorage.app",messagingSenderId:"74208870746",appId:"1:74208870746:web:7acdc8aefb4dc7b695b363",measurementId:"G-QN4PQRV22X"};
+firebase.initializeApp(firebaseConfig);const db=firebase.database();
+const masalar=["Masa 1","Masa 2","Masa 3","Masa 4","Masa 5"];
+const kampAlanlari=["Çadır 1","Çadır 2","Çadır 3","Çadır 4","Çadır 5","Parsel A","Parsel B","Parsel C","Parsel D","Parsel E"];
+let garsonListesi=[],canliPinler={},siparisler={},menuData={},sepet=[],seciliGarson="";
+
+function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function saat(){return new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+function tarihSaat(){return new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'medium'});}
+
+// GARSONLAR: KASA SON.html içindeki /garsonlar/{id} = {ad:"..."} yapısını okur.
+db.ref('garsonlar').on('value',snap=>{
+const data=snap.val()||{};const eski=seciliGarson;garsonListesi=[];
+Object.entries(data).forEach(([key,val])=>{const ad=typeof val==='object'&&val?val.ad:val;if(ad)garsonListesi.push({key,ad:String(ad)});});
+garsonListesi.sort((a,b)=>a.ad.localeCompare(b.ad,'tr'));
+const sel=document.getElementById('garsonSelect');sel.innerHTML='<option value="">-- Lütfen Kendinizi Seçin --</option>';
+garsonListesi.forEach(g=>{const o=document.createElement('option');o.value=g.ad;o.textContent=g.ad;sel.appendChild(o);});
+if(garsonListesi.some(g=>g.ad===eski)){sel.value=eski;seciliGarson=eski;}else{seciliGarson='';sel.value='';}
+gorevleriCiz();
+});
+function garsonDegisti(){seciliGarson=document.getElementById('garsonSelect').value;localStorage.setItem('utopyaSeciliGarson',seciliGarson);}
+(function(){const s=localStorage.getItem('utopyaSeciliGarson');if(s){seciliGarson=s;}})();
+
+// KASA'da üretilen Masa PIN'lerini canlı okur.
+db.ref('masaPinler').on('value',snap=>{canliPinler=snap.val()||{};haritaCiz();gorevleriCiz();});
+
+// Tüm siparişleri tek dinleyicide topluyoruz. Böylece aynı masa için tek kart oluşur.
+db.ref('siparisler').on('value',snap=>{siparisler=snap.val()||{};gorevleriCiz();haritaCiz();});
+
+db.ref('menu').on('value',snap=>{menuData=snap.val()||{};menuCiz();});
+
+function siparisTeslimEt(orderKey){
+if(!seciliGarson){alert('Önce üst kısımdan kendinizi seçin.');return;}
+const order=siparisler[orderKey];if(!order)return;
+if(order.teslimDurumu==='TESLIM_EDILDI')return;
+const teslimSaati=saat();
+db.ref('siparisler/'+orderKey).update({teslimDurumu:'TESLIM_EDILDI',teslimEdenGarson:seciliGarson,teslimSaati:teslimSaati,teslimTarihiSaati:tarihSaat()}).then(()=>{sesliUyari(880);});
+}
+
+function gorevleriGrupla(){
+const gruplar={};Object.entries(siparisler).forEach(([key,o])=>{if(!o||!o.masa)return;if(!gruplar[o.masa])gruplar[o.masa]=[];gruplar[o.masa].push({...o,key});});return gruplar;
+}
+function urunleriYaz(urunler){return (urunler||[]).map(u=>`<div class="siparis-satir">• <strong>${escapeHtml(u.urun||u.name||'Ürün')}</strong> <span style="color:#fbc531">(${Number(u.fiyat||u.price||0).toFixed(2)} TL)</span>${u.not?`<br><small style="color:#f39c12">Not: ${escapeHtml(u.not)}</small>`:''}</div>`).join('');}
+function gorevleriCiz(){
+const alan=document.getElementById('gorevListesi');if(!alan)return;const gruplar=gorevleriGrupla();alan.innerHTML='';
+const masaSirasi=masalar.filter(m=>gruplar[m]);const diger=Object.keys(gruplar).filter(m=>!masalar.includes(m));const sirali=[...masaSirasi,...diger];
+if(!sirali.length){alan.innerHTML='<div class="bos-mesaj">Henüz sipariş bulunmuyor.</div>';return;}
+sirali.forEach(masa=>{
+const liste=gruplar[masa].sort((a,b)=>Number(a.zaman||0)-Number(b.zaman||0));
+const bekleyenler=liste.filter(o=>o.teslimDurumu!=='TESLIM_EDILDI');
+const pin=canliPinler[masa]||'----';
+const kart=document.createElement('div');kart.className='gorev-kart '+(bekleyenler.length?'yeni':'');
+kart.innerHTML=`<div class="gorev-header"><span>🍽️ ${escapeHtml(masa)}</span><span class="masa-pin">PIN: ${escapeHtml(pin)}</span></div><div>${liste.map(o=>siparisGrubuHtml(o)).join('')}</div>`;
+alan.appendChild(kart);
+});
+}
+function siparisGrubuHtml(o){
+const teslimli=o.teslimDurumu==='TESLIM_EDILDI';const sipSaat=o.saat||o.olusturmaSaati||'--:--';
+return `<div class="siparis-grubu ${teslimli?'teslimli':'bekliyor'}">
+<div class="siparis-baslik"><strong>🧾 Sipariş • ${escapeHtml(sipSaat)}</strong><span class="durum ${teslimli?'durum-teslim':'durum-bekliyor'}">${teslimli?'TESLİM EDİLDİ':'BEKLİYOR'}</span></div>
+${urunleriYaz(o.urunler)}
+<div class="meta">📅 Sipariş zamanı: ${escapeHtml(o.tarihSaat||sipSaat)}</div>
+${o.not?`<div class="meta">📝 ${escapeHtml(o.not)}</div>`:''}
+${teslimli?`<div class="teslim-bilgi">✅ Teslim eden garson: <strong>${escapeHtml(o.teslimEdenGarson||'Bilinmiyor')}</strong><br>🕐 Teslim saati: <strong>${escapeHtml(o.teslimSaati||'Bilinmiyor')}</strong>${o.teslimTarihiSaati?`<br>📅 ${escapeHtml(o.teslimTarihiSaati)}`:''}</div>`:`<button class="btn-teslim" onclick="siparisTeslimEt('${o.key}')">📦 Bu Siparişi Teslim Ettim</button>`}
+</div>`;
+}
+
+function haritaCiz(){
+const rest=document.getElementById('restMap'),camp=document.getElementById('campMap');if(!rest||!camp)return;const gruplar=gorevleriGrupla();rest.innerHTML='';camp.innerHTML='';
+masalar.forEach(m=>{const bekleyen=(gruplar[m]||[]).some(o=>o.teslimDurumu!=='TESLIM_EDILDI');const d=document.createElement('div');d.className='map-card '+(bekleyen?'siparis-var':'');d.innerHTML=`<span class="icon">🍽️</span><span class="name">${m}</span><span class="pin">🔑 PIN: ${escapeHtml(canliPinler[m]||'----')}</span>${bekleyen?'<div style="font-size:11px;color:#ff7675;margin-top:4px">🔴 Yeni sipariş</div>':''}`;rest.appendChild(d);});
+kampAlanlari.forEach(a=>{const d=document.createElement('div');d.className='map-card';d.innerHTML=`<span class="icon">⛺</span><span class="name">${a}</span>`;camp.appendChild(d);});
+}
+
+function menuCiz(){const alan=document.getElementById('menuListesiModal');if(!alan)return;alan.innerHTML='';const kats=Object.keys(menuData);if(!kats.length){alan.innerHTML='<div style="color:#aaa">Menü bulunamadı.</div>';return;}kats.forEach(k=>{const bas=document.createElement('div');bas.className='menu-kat';bas.textContent=k;alan.appendChild(bas);(menuData[k]||[]).forEach((u,i)=>{if(u.stok===false)return;const row=document.createElement('div');row.className='menu-urun';row.innerHTML=`<span><strong>${escapeHtml(u.name)}</strong><br><small>${Number(u.price||0).toFixed(2)} TL</small></span><button onclick="sepeteEkle('${escapeHtml(k)}',${i})">Ekle</button>`;alan.appendChild(row);});});}
+function sepeteEkle(k,i){const u=(menuData[k]||[])[i];if(!u)return;const mevcut=sepet.find(x=>x.name===u.name&&x.price===u.price);if(mevcut)mevcut.adet++;else sepet.push({name:u.name,price:Number(u.price||0),adet:1});sepetCiz();}
+function sepetCiz(){const a=document.getElementById('modalSepetListesi'),t=document.getElementById('modalToplamTutar');if(!sepet.length){a.innerHTML='<small style="color:#aaa">Henüz ürün eklenmedi.</small>';t.textContent='Toplam: 0.00 TL';return;}let toplam=0;a.innerHTML=sepet.map((x,i)=>{toplam+=x.price*x.adet;return `<div class="sepet-item"><span>${escapeHtml(x.name)} x${x.adet}</span><button class="btn" style="background:#e74c3c;color:#fff;padding:4px 8px" onclick="sepettenSil(${i})">Sil</button></div>`}).join('');t.textContent='Toplam: '+toplam.toFixed(2)+' TL';}
+function sepettenSil(i){sepet.splice(i,1);sepetCiz();}
+function menuModalAc(){if(!seciliGarson){alert('Önce üst kısımdan kendinizi seçin.');return;}document.getElementById('menuModal').style.display='block';menuCiz();}
+function menuModalKapat(){document.getElementById('menuModal').style.display='none';}
+function manuelSiparisGonder(){if(!seciliGarson)return alert('Önce garson seçin.');if(!sepet.length)return alert('Sepet boş.');const masa=document.getElementById('modalMasaSelect').value;const urunler=sepet.flatMap(x=>Array.from({length:x.adet},()=>({urun:x.name,fiyat:x.price})));const now=Date.now();db.ref('siparisler').push({masa,urunler,saat:saat(),tarihSaat:tarihSaat(),zaman:now,manuelGarson:seciliGarson}).then(()=>{alert(`✅ ${masa} için sipariş gönderildi.`);sepet=[];sepetCiz();menuModalKapat();});}
+function sesliUyari(freq){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.type='sine';osc.frequency.setValueAtTime(freq,ctx.currentTime);gain.gain.setValueAtTime(.1,ctx.currentTime);osc.start();osc.stop(ctx.currentTime+.3);}catch(e){}}
+window.addEventListener('click',e=>{if(e.target===document.getElementById('menuModal'))menuModalKapat();});
+
+// İlk ekran
+setTimeout(()=>{document.getElementById('garsonSelect').value=seciliGarson||'';haritaCiz();gorevleriCiz();menuCiz();},300);
+</script>
+</body>
+</html>
